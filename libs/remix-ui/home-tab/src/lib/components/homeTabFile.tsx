@@ -51,10 +51,32 @@ function HomeTabFile ({plugin}: HomeTabFileProps) {
         return { ...prevState, recentWorkspaces: { first: recents.first, second: recents.second, third: recents.third } }
       })
     })
+
+    const updateWorkspaceName = (name, newName = '') => {
+      let recents = JSON.parse(localStorage.getItem('recentWorkspaces'))
+      const newRecents = recents
+      if (!recents) {
+        recents = {first:'', second: '', third: ''}
+      } else {
+        Object.keys(recents).map(key => {
+          if (recents[key] === name) newRecents[key] = newName
+        })
+      }
+      setState(prevState => {
+        return { ...prevState, recentWorkspaces: { first: newRecents.first, second: newRecents.second, third: newRecents.third } }
+      })
+    }
+    plugin.on('filePanel', 'workspaceDeleted', async (deletedName) => {
+      updateWorkspaceName(deletedName)
+    })
+    plugin.on('filePanel', 'workspaceRenamed', async (name, newName) => {
+      updateWorkspaceName(name, newName)
+    })
     return () => {
       plugin.off('filePanel', 'setWorkspace')
+      plugin.off('filePanel', 'workspaceDeleted')
     }
-  }, [])
+  }, [state.recentWorkspaces])
 
   const processLoading = (type: string) => {
     _paq.push(['trackEvent', 'hometab', 'filesSection', 'importFrom' + type])
@@ -107,7 +129,7 @@ function HomeTabFile ({plugin}: HomeTabFileProps) {
       await plugin.call('filePanel', 'createWorkspace', wName, 'remixDefault')
     }
     await plugin.call('filePanel', 'switchToWorkspace', { name: wName, isLocalHost: false })
-    await plugin.call('filePanel', 'switchToWorkspace', { name: wName, isLocalHost: false }) // don't ask why
+    await plugin.call('filePanel', 'switchToWorkspace', { name: wName, isLocalHost: false }) // calling once is not working.
 
     const content = `// SPDX-License-Identifier: MIT
     pragma solidity >=0.7.0 <0.9.0;
