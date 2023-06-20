@@ -73,6 +73,7 @@ export const RemixUiTerminal = (props: RemixUiTerminalProps) => {
   // terminal inputRef
   const inputEl = useRef(null)
   const messagesEndRef = useRef(null)
+  const typeWriterIndexes = useRef([])
 
   // terminal dragable
   const panelRef = useRef(null)
@@ -314,6 +315,7 @@ export const RemixUiTerminal = (props: RemixUiTerminalProps) => {
 
   const handleClearConsole = () => {
     setClearConsole(true)
+    typeWriterIndexes.current = []
     dispatch({ type: 'clearconsole', payload: [] })
     inputEl.current.focus()
   }
@@ -606,19 +608,41 @@ export const RemixUiTerminal = (props: RemixUiTerminalProps) => {
                       <div className={classNameBlock} data-id="block" key={i}><span className={x.style}>{ stringified } </span></div>
                     )
                   } else {
-                    return (
-                      <div className={classNameBlock} data-id="block" key={i}><span className={x.style}>{msg ? msg.toString() : null}</span></div>
-                    )
+                    // typeWriterIndexes: we don't want to rerender using typewriter when the react component updates
+                    if (x.typewriter && !typeWriterIndexes.current.includes(index)) {
+                      typeWriterIndexes.current.push(index)
+                      return (
+                        <div className={classNameBlock} data-id="block" key={index}> <span ref={(element) => {
+                          typewrite(element, msg ? msg.toString() : null)
+                        }} className={x.style}></span></div>
+                      )
+                  } else {
+                      return (
+                        <div className={classNameBlock} data-id="block" key={i}><span className={x.style}>{msg ? msg.toString() : null}</span></div>
+                      )
+                    }
                   }
                 })
               } else {
-                if (typeof x.message !== 'function') {
+                // typeWriterIndexes: we don't want to rerender using typewriter when the react component updates
+                if (x.typewriter && !typeWriterIndexes.current.includes(index)) {
+                  typeWriterIndexes.current.push(index)
                   return (
-                    <div className={classNameBlock} data-id="block" key={index}> <span className={x.style}> {x.message}</span></div>
+                    <div className={classNameBlock} data-id="block" key={index}> <span ref={(element) => {
+                      typewrite(element, x.message)
+                    }} className={x.style}></span></div>
                   )
+                } else {
+                  if (typeof x.message !== 'function') {
+                    return (
+                      <div className={classNameBlock} data-id="block" key={index}> <span className={x.style}> {x.message}</span></div>
+                    )
+                  }
                 }
               }
-            })}
+            })
+            
+            }
             <div ref={messagesEndRef} />
           </div>
           { isOpen && <div id="terminalCli" data-id="terminalCli" className="remix_ui_terminal_cli position-absolute w-100" onClick={focusinput}>
@@ -653,6 +677,17 @@ export const RemixUiTerminal = (props: RemixUiTerminalProps) => {
       {toastProvider.show && <Toaster message={`provider for path ${toastProvider.fileName} not found`} />}
     </div>
   )
+}
+
+const typewrite = (elementsRef, message) => {  
+  (() => {
+    let count = 0
+    const id = setInterval(() => {
+      count++
+      elementsRef.innerText = message.substr(0, count)
+      if (message === count) clearInterval(id)  
+    }, 5)
+  })()
 }
 
 function isHtml (value) {
