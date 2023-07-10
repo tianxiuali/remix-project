@@ -7,6 +7,7 @@ const OriginWarning = () => {
   const [content, setContent] = useState<string>(null)
 
   useEffect(() => {
+    return
     // check the origin and warn message
     if (window.location.hostname === 'yann300.github.io') {
       setContent('This UNSTABLE ALPHA branch of Remix has been moved to http://ethereum.github.io/remix-live-alpha.')
