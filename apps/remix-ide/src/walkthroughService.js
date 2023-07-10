@@ -15,7 +15,7 @@ export class WalkthroughService extends Plugin {
     super(profile)
     appManager.event.on('activate', (plugin) => {
       if (plugin.name === 'udapp' && !showMatamo) {
-        this.start()
+        // this.start()
       }
     })
   }
